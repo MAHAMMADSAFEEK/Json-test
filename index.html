@@ -497,6 +497,71 @@
   </div>
 </div>
 
+<!-- Report-an-issue chat widget -->
+<button class="chat-fab" id="chatFab" title="Report an issue">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+  <span class="fab-dot" id="fabDot"></span>
+</button>
+
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-head">
+    <div>
+      <h4>Report an issue</h4>
+      <div class="sub">Goes straight into the Chats sheet</div>
+    </div>
+    <button class="chat-close" id="chatClose">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="chat-body">
+    <div class="chat-field">
+      <label>Issue</label>
+      <select id="chatIssue">
+        <option value="">Select an issue…</option>
+        <option value="Data not loading">Data not loading</option>
+        <option value="Wrong value in table">Wrong value in table</option>
+        <option value="Missing record">Missing record</option>
+        <option value="Login / access issue">Login / access issue</option>
+        <option value="Slow performance">Slow performance</option>
+        <option value="Feature request">Feature request</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="chat-field">
+      <label>Team</label>
+      <select id="chatTeam">
+        <option value="">Select a team…</option>
+        <option value="Ops Team">Ops Team</option>
+        <option value="Design Team">Design Team</option>
+        <option value="Sales Team">Sales Team</option>
+        <option value="IT / Dev Team">IT / Dev Team</option>
+        <option value="Admin">Admin</option>
+      </select>
+    </div>
+    <div class="chat-field">
+      <label>Remarks</label>
+      <textarea id="chatRemarks" placeholder="Describe what's happening…"></textarea>
+    </div>
+    <div class="chat-email-row">
+      <span>Sending as <span class="email-val" id="chatEmailDisplay">—</span></span>
+      <button id="chatEmailChange">change</button>
+    </div>
+    <button class="chat-submit" id="chatSubmitBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+      Submit
+    </button>
+  </div>
+  <div class="chat-recent">
+    <h5>Your recent submissions</h5>
+    <div id="chatRecentList"><div class="chat-recent-empty">Nothing submitted yet in this session.</div></div>
+  </div>
+</div>
+
+<div class="chat-toast" id="chatToast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="chatToastText">Submitted</span>
+</div>
+
 <script>
 /* ============ CONFIG ============ */
 const SHEET_ID = "1U5VUp8y-hVhMjuimiDvCimJ7eUS0rMd2kZTrtog1i2I";
@@ -998,70 +1063,5 @@ document.getElementById('refreshBtn').addEventListener('click', loadData);
 
 loadData();
 </script>
-<!-- Report-an-issue chat widget -->
-<button class="chat-fab" id="chatFab" title="Report an issue">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-  <span class="fab-dot" id="fabDot"></span>
-</button>
-
-<div class="chat-panel" id="chatPanel">
-  <div class="chat-head">
-    <div>
-      <h4>Report an issue</h4>
-      <div class="sub">Goes straight into the Chats sheet</div>
-    </div>
-    <button class="chat-close" id="chatClose">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-    </button>
-  </div>
-  <div class="chat-body">
-    <div class="chat-field">
-      <label>Issue</label>
-      <select id="chatIssue">
-        <option value="">Select an issue…</option>
-        <option value="Data not loading">Data not loading</option>
-        <option value="Wrong value in table">Wrong value in table</option>
-        <option value="Missing record">Missing record</option>
-        <option value="Login / access issue">Login / access issue</option>
-        <option value="Slow performance">Slow performance</option>
-        <option value="Feature request">Feature request</option>
-        <option value="Other">Other</option>
-      </select>
-    </div>
-    <div class="chat-field">
-      <label>Team</label>
-      <select id="chatTeam">
-        <option value="">Select a team…</option>
-        <option value="Ops Team">Ops Team</option>
-        <option value="Design Team">Design Team</option>
-        <option value="Sales Team">Sales Team</option>
-        <option value="IT / Dev Team">IT / Dev Team</option>
-        <option value="Admin">Admin</option>
-      </select>
-    </div>
-    <div class="chat-field">
-      <label>Remarks</label>
-      <textarea id="chatRemarks" placeholder="Describe what's happening…"></textarea>
-    </div>
-    <div class="chat-email-row">
-      <span>Sending as <span class="email-val" id="chatEmailDisplay">—</span></span>
-      <button id="chatEmailChange">change</button>
-    </div>
-    <button class="chat-submit" id="chatSubmitBtn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-      Submit
-    </button>
-  </div>
-  <div class="chat-recent">
-    <h5>Your recent submissions</h5>
-    <div id="chatRecentList"><div class="chat-recent-empty">Nothing submitted yet in this session.</div></div>
-  </div>
-</div>
-
-<div class="chat-toast" id="chatToast">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
-  <span id="chatToastText">Submitted</span>
-</div>
-
 </body>
 </html>
