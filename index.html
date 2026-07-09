@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Master Sheet Dashboard | SolarSquare</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root{
+    --bg:#F5F6F9;
+    --surface:#FFFFFF;
+    --surface-2:#FAFBFD;
+    --ink:#101425;
+    --ink-soft:#5B6272;
+    --line:#E6E8F0;
+    --line-soft:#EEF0F6;
+
+    --design:#3652E0;
+    --design-tint:#EAEDFC;
+    --hoto:#0E8F82;
+    --hoto-tint:#E5F5F2;
+    --lead:#C2570A;
+    --lead-tint:#FBEEE2;
+
+    --radius:12px;
+    --shadow:0 1px 2px rgba(16,20,37,0.04), 0 8px 24px -8px rgba(16,20,37,0.08);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.brand,.stage-label{font-family:'Sora',sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:18px 28px;
+    background:var(--surface);
+    border-bottom:1px solid var(--line);
+    position:sticky;
+    top:0;
+    z-index:30;
+  }
+  .brand-wrap{display:flex;align-items:center;gap:12px;}
+  .brand-mark{
+    width:34px;height:34px;border-radius:9px;
+    background:linear-gradient(135deg,var(--design),var(--hoto));
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-family:'Sora';font-weight:700;font-size:14px;
+    flex-shrink:0;
+  }
+  .brand{font-size:16px;font-weight:700;letter-spacing:-0.01em;}
+  .brand-sub{font-size:11.5px;color:var(--ink-soft);margin-top:1px;}
+  .topbar-right{display:flex;align-items:center;gap:14px;}
+  .status-pill{
+    display:flex;align-items:center;gap:6px;
+    font-size:12px;color:var(--ink-soft);
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    padding:6px 12px;border-radius:999px;
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:#12B76A;flex-shrink:0;}
+  .dot.pulse{animation:pulse 1.4s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(18,183,106,0.5);}70%{box-shadow:0 0 0 6px rgba(18,183,106,0);}100%{box-shadow:0 0 0 0 rgba(18,183,106,0);}}
+  .btn-refresh{
+    border:1px solid var(--line);
+    background:var(--surface);
+    color:var(--ink);
+    font-family:'Inter';font-size:12.5px;font-weight:600;
+    padding:7px 14px;border-radius:8px;cursor:pointer;
+    display:flex;align-items:center;gap:6px;
+    transition:background .15s;
+  }
+  .btn-refresh:hover{background:var(--surface-2);}
+  .btn-refresh svg{width:14px;height:14px;}
+  .btn-refresh.spinning svg{animation:spin 0.9s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ---------- Pipeline stepper (signature element) ---------- */
+  .pipeline{
+    max-width:1240px;margin:22px auto 0;padding:0 28px;
+  }
+  .pipeline-track{
+    display:flex;align-items:stretch;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    overflow:hidden;
+    box-shadow:var(--shadow);
+  }
+  .stage{
+    flex:1;padding:16px 20px;position:relative;
+    cursor:pointer;
+    border-right:1px solid var(--line-soft);
+    transition:background .15s;
+  }
+  .stage:last-child{border-right:none;}
+  .stage:hover{background:var(--surface-2);}
+  .stage.active{background:var(--surface-2);}
+  .stage.active::after{
+    content:'';position:absolute;left:0;bottom:0;right:0;height:3px;
+  }
+  .stage[data-tab="design"].active::after{background:var(--design);}
+  .stage[data-tab="hoto"].active::after{background:var(--hoto);}
+  .stage[data-tab="lead"].active::after{background:var(--lead);}
+  .stage-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  .stage-num{
+    font-family:'JetBrains Mono';font-size:11px;font-weight:600;
+    color:var(--ink-soft);
+  }
+  .stage-label{font-size:14px;font-weight:700;}
+  .stage-count{font-size:23px;font-weight:800;font-family:'Sora';margin-top:2px;}
+  .stage-meta{font-size:11.5px;color:var(--ink-soft);margin-top:3px;}
+  .stage-arrow{
+    position:absolute;right:-1px;top:50%;transform:translateY(-50%);
+    width:20px;height:20px;color:var(--line);z-index:2;
+  }
+  .stage[data-tab="design"] .stage-num,.stage[data-tab="design"] .stage-count{color:var(--design);}
+  .stage[data-tab="hoto"] .stage-num,.stage[data-tab="hoto"] .stage-count{color:var(--hoto);}
+  .stage[data-tab="lead"] .stage-num,.stage[data-tab="lead"] .stage-count{color:var(--lead);}
+
+  /* ---------- Main container ---------- */
+  .wrap{max-width:1240px;margin:0 auto;padding:22px 28px 60px;}
+
+  .panel-head{
+    display:flex;align-items:center;justify-content:space-between;
+    flex-wrap:wrap;gap:12px;
+    margin-bottom:16px;
+  }
+  .panel-title{display:flex;align-items:center;gap:10px;}
+  .panel-title h2{font-size:19px;margin:0;font-weight:700;}
+  .tag{
+    font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;
+    text-transform:uppercase;letter-spacing:.04em;
+  }
+  .tag.design{background:var(--design-tint);color:var(--design);}
+  .tag.hoto{background:var(--hoto-tint);color:var(--hoto);}
+  .tag.lead{background:var(--lead-tint);color:var(--lead);}
+
+  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .search-box{
+    display:flex;align-items:center;gap:8px;
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:8px;padding:8px 12px;min-width:240px;
+  }
+  .search-box svg{width:15px;height:15px;color:var(--ink-soft);flex-shrink:0;}
+  .search-box input{
+    border:none;outline:none;font-family:'Inter';font-size:13px;
+    width:100%;background:transparent;color:var(--ink);
+  }
+  select.city-filter, .filter-bar select{
+    font-family:'Inter';font-size:13px;color:var(--ink);
+    border:1px solid var(--line);background:var(--surface);
+    border-radius:8px;padding:8px 10px;cursor:pointer;
+  }
+  .filter-bar{display:flex;gap:8px;flex-wrap:wrap;}
+  .count-chip{font-size:12.5px;color:var(--ink-soft);white-space:nowrap;}
+
+  .btn-download{
+    border:1px solid var(--line);
+    background:var(--ink);
+    color:#fff;
+    font-family:'Inter';font-size:12.5px;font-weight:600;
+    padding:8px 14px;border-radius:8px;cursor:pointer;
+    display:flex;align-items:center;gap:6px;
+    transition:background .15s, transform .1s;
+  }
+  .btn-download:hover{background:#252A3D;}
+  .btn-download:active{transform:scale(.97);}
+  .btn-download svg{width:14px;height:14px;}
+  .btn-download:disabled{opacity:.5;cursor:not-allowed;}
+
+  .active-filters{
+    display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+    margin:-6px 0 16px;min-height:1px;
+  }
+  .active-filters:empty{margin:0;}
+  .filter-chip{
+    display:flex;align-items:center;gap:6px;
+    font-size:12px;font-weight:600;color:var(--ink);
+    background:var(--surface-2);border:1px solid var(--line);
+    padding:5px 8px 5px 11px;border-radius:999px;
+  }
+  .filter-chip span.k{color:var(--ink-soft);font-weight:500;}
+  .filter-chip button{
+    border:none;background:var(--line-soft);color:var(--ink-soft);
+    width:16px;height:16px;border-radius:50%;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;font-size:11px;
+    line-height:1;padding:0;
+  }
+  .filter-chip button:hover{background:var(--line);color:var(--ink);}
+  .clear-all-chip{
+    font-size:12px;font-weight:600;color:var(--design);
+    background:none;border:none;cursor:pointer;padding:5px 4px;
+  }
+  .clear-all-chip:hover{text-decoration:underline;}
+
+  /* ---------- Table ---------- */
+  .table-card{
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);
+  }
+  .table-scroll{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px;}
+  thead th{
+    text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;
+    color:var(--ink-soft);font-weight:600;
+    padding:12px 16px;border-bottom:1px solid var(--line);
+    background:var(--surface-2);white-space:nowrap;
+  }
+  tbody td{
+    padding:12px 16px;border-bottom:1px solid var(--line-soft);
+    color:var(--ink);vertical-align:middle;
+  }
+  tbody tr{cursor:pointer;transition:background .12s;}
+  tbody tr:hover{background:var(--surface-2);}
+  tbody tr:last-child td{border-bottom:none;}
+  .lead-id{font-family:'JetBrains Mono';font-size:12px;color:var(--ink-soft);}
+  .primary-cell{font-weight:600;}
+  .cell-sub{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .badge{
+    display:inline-flex;align-items:center;gap:5px;
+    font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:6px;
+    white-space:nowrap;
+  }
+  .badge::before{content:'';width:6px;height:6px;border-radius:50%;}
+  .badge.green{background:#EAF9EE;color:#12793B;}
+  .badge.green::before{background:#12B76A;}
+  .badge.amber{background:#FEF3E8;color:#B15900;}
+  .badge.amber::before{background:#F79009;}
+  .badge.red{background:#FDEEEE;color:#C0362C;}
+  .badge.red::before{background:#F04438;}
+  .badge.gray{background:#F1F2F5;color:#5B6272;}
+  .badge.gray::before{background:#98A1B3;}
+  .badge.blue{background:#EAEDFC;color:#3652E0;}
+  .badge.blue::before{background:#3652E0;}
+
+  .empty-state{padding:60px 20px;text-align:center;color:var(--ink-soft);}
+  .empty-state svg{width:40px;height:40px;margin-bottom:10px;opacity:.5;}
+  .empty-state .e-title{font-weight:600;color:var(--ink);margin-bottom:4px;font-size:14px;}
+  .empty-state .e-sub{font-size:12.5px;}
+
+  .skeleton-row td{padding:14px 16px;}
+  .skel{height:14px;border-radius:4px;background:linear-gradient(90deg,#EEF0F6 25%,#F6F7FA 37%,#EEF0F6 63%);background-size:400% 100%;animation:shimmer 1.4s infinite;}
+  @keyframes shimmer{0%{background-position:100% 50%;}100%{background-position:0 50%;}}
+
+  .view-link{
+    font-size:12px;font-weight:600;color:var(--ink-soft);
+    display:inline-flex;align-items:center;gap:4px;
+  }
+  .view-link svg{width:13px;height:13px;}
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(16,20,37,0.5);
+    display:none;align-items:flex-start;justify-content:center;
+    padding:40px 20px;z-index:100;overflow-y:auto;
+    backdrop-filter:blur(2px);
+  }
+  .modal-overlay.open{display:flex;}
+  .modal{
+    background:var(--surface);border-radius:16px;
+    width:100%;max-width:760px;
+    box-shadow:0 20px 60px -10px rgba(16,20,37,0.35);
+    animation:modalIn .18s ease;
+  }
+  @keyframes modalIn{from{opacity:0;transform:translateY(8px) scale(.98);}to{opacity:1;transform:none;}}
+  .modal-head{
+    display:flex;align-items:flex-start;justify-content:space-between;
+    padding:20px 24px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:var(--surface);border-radius:16px 16px 0 0;
+  }
+  .modal-head h3{margin:0 0 4px;font-size:17px;}
+  .modal-head .lead-id{font-size:12.5px;}
+  .modal-close{
+    border:none;background:var(--surface-2);width:30px;height:30px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);
+    flex-shrink:0;
+  }
+  .modal-close:hover{background:var(--line-soft);}
+  .modal-body{padding:8px 24px 24px;}
+  .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+  .field-row{
+    padding:11px 0;border-bottom:1px solid var(--line-soft);
+    display:flex;flex-direction:column;gap:3px;
+    padding-right:16px;
+  }
+  .field-row.full{grid-column:1 / -1;}
+  .field-key{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-soft);font-weight:600;}
+  .field-val{font-size:13.5px;color:var(--ink);word-break:break-word;line-height:1.45;}
+  .field-val a{color:var(--design);text-decoration:none;font-weight:600;}
+  .field-val a:hover{text-decoration:underline;}
+  .field-val.empty{color:#B5B9C4;font-style:italic;}
+  .field-val.multiline{white-space:pre-line;}
+
+  @media (max-width:720px){
+    .field-grid{grid-template-columns:1fr;}
+    .pipeline-track{flex-direction:column;}
+    .stage{border-right:none;border-bottom:1px solid var(--line-soft);}
+    .stage-arrow{display:none;}
+    .topbar{padding:14px 16px;}
+    .wrap{padding:18px 16px 40px;}
+    .pipeline{padding:0 16px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand-wrap">
+    <div class="brand-mark">MS</div>
+    <div>
+      <div class="brand">Master Sheet Dashboard</div>
+      <div class="brand-sub">Design &middot; HOTO &middot; Lead Data</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="status-pill"><span class="dot pulse" id="statusDot"></span><span id="statusText">Connecting…</span></div>
+    <button class="btn-refresh" id="refreshBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>
+      Refresh
+    </button>
+  </div>
+</div>
+
+<div class="pipeline">
+  <div class="pipeline-track">
+    <div class="stage active" data-tab="design">
+      <div class="stage-top"><span class="stage-num">01</span><span class="stage-label">Design</span></div>
+      <div class="stage-count" id="countDesign">–</div>
+      <div class="stage-meta">records parsed</div>
+      <svg class="stage-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+    </div>
+    <div class="stage" data-tab="hoto">
+      <div class="stage-top"><span class="stage-num">02</span><span class="stage-label">HOTO</span></div>
+      <div class="stage-count" id="countHoto">–</div>
+      <div class="stage-meta">records parsed</div>
+      <svg class="stage-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+    </div>
+    <div class="stage" data-tab="lead">
+      <div class="stage-top"><span class="stage-num">03</span><span class="stage-label">Lead Data</span></div>
+      <div class="stage-count" id="countLead">–</div>
+      <div class="stage-meta">records parsed</div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="panel-head">
+    <div class="panel-title">
+      <h2 id="panelTitle">Design</h2>
+      <span class="tag design" id="panelTag">DESIGN</span>
+    </div>
+    <div class="controls">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="searchInput" placeholder="Search Lead ID, name, city…">
+      </div>
+      <div class="filter-bar" id="filterBar"></div>
+      <button class="btn-download" id="downloadBtn" title="Download current filtered view as CSV">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>
+        Download
+      </button>
+      <span class="count-chip" id="rowCount"></span>
+    </div>
+  </div>
+
+  <div class="active-filters" id="activeFilters"></div>
+
+  <div class="table-card">
+    <div class="table-scroll">
+      <table>
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody">
+          <tr class="skeleton-row"><td colspan="8"><div class="skel" style="width:90%"></div></td></tr>
+          <tr class="skeleton-row"><td colspan="8"><div class="skel" style="width:75%"></div></td></tr>
+          <tr class="skeleton-row"><td colspan="8"><div class="skel" style="width:85%"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h3 id="modalTitle">Record detail</h3>
+        <div class="lead-id" id="modalLeadId"></div>
+      </div>
+      <button class="modal-close" id="modalClose">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field-grid" id="modalFields"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ CONFIG ============ */
+const SHEET_ID = "1U5VUp8y-hVhMjuimiDvCimJ7eUS0rMd2kZTrtog1i2I";
+const GID = "435647321";
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+
+/* Column letters in Master Sheet: A Lead ID | B CHS Name | C Type | D Design(json) | E HOTO(json) | F Lead data(json) */
+const COL = { leadId:"Lead ID", chsName:"CHS Name", type:"Type", design:"Design", hoto:"HOTO", lead:"Lead data" };
+
+let RAW_ROWS = [];
+let PARSED = { design:[], hoto:[], lead:[] };
+let ACTIVE_TAB = "design";
+let ACTIVE_FILTERS = {};
+let ACTIVE_SEARCH = "";
+
+/* ============ RENDER: FILTER BAR ============ */
+function renderFilterBar(){
+  const cfg = TAB_CFG[ACTIVE_TAB];
+  const data = PARSED[ACTIVE_TAB];
+  const bar = document.getElementById('filterBar');
+  bar.innerHTML = "";
+
+  (cfg.filters || []).forEach(f => {
+    const values = [...new Set(data.map(r => (r.json[f.key] ?? "").toString().trim()).filter(Boolean))].sort();
+    const sel = document.createElement('select');
+    sel.dataset.filterKey = f.key;
+    sel.innerHTML = `<option value="">All ${esc(f.label)}</option>` + values.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+    if(ACTIVE_FILTERS[f.key]) sel.value = ACTIVE_FILTERS[f.key];
+    sel.addEventListener('change', () => {
+      if(sel.value) ACTIVE_FILTERS[f.key] = sel.value;
+      else delete ACTIVE_FILTERS[f.key];
+      renderTable();
+    });
+    bar.appendChild(sel);
+  });
+}
+
+function renderActiveFilterChips(){
+  const cfg = TAB_CFG[ACTIVE_TAB];
+  const wrap = document.getElementById('activeFilters');
+  const keys = Object.keys(ACTIVE_FILTERS);
+  if(keys.length === 0){ wrap.innerHTML = ""; return; }
+  const labelFor = (k) => (cfg.filters.find(f => f.key === k) || {}).label || k;
+  wrap.innerHTML = keys.map(k => `
+    <span class="filter-chip" data-key="${esc(k)}">
+      <span class="k">${esc(labelFor(k))}:</span> ${esc(ACTIVE_FILTERS[k])}
+      <button aria-label="Remove filter">✕</button>
+    </span>`).join('') + `<button class="clear-all-chip" id="clearAllFilters">Clear all</button>`;
+
+  wrap.querySelectorAll('.filter-chip button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.closest('.filter-chip').dataset.key;
+      delete ACTIVE_FILTERS[key];
+      renderFilterBar();
+      renderTable();
+    });
+  });
+  const clearAll = document.getElementById('clearAllFilters');
+  if(clearAll) clearAll.addEventListener('click', () => {
+    ACTIVE_FILTERS = {};
+    renderFilterBar();
+    renderTable();
+  });
+}
+
+/* ============ TAB CONFIG ============ */
+const TAB_CFG = {
+  design: {
+    label:"Design", tag:"DESIGN", tagClass:"design",
+    columns:[
+      {key:"Lead ID", label:"Lead ID", type:"mono"},
+      {key:"Project name", label:"Project / CHS", type:"primary", sub:"City"},
+      {key:"Designer Type", label:"Designer Type", type:"text"},
+      {key:"Assigned Designer", label:"Assigned Designer", type:"text"},
+      {key:"Capacity", label:"Capacity (kWp)", type:"text"},
+      {key:"Complete Design", label:"Status", type:"badge", badgeMap:{
+        "Completed":"green", "On Hold":"amber", "":"gray"
+      }},
+      {key:"Completed time", label:"Completed On", type:"date"},
+    ],
+    cityKey:"City",
+    filters:[
+      {key:"City", label:"City"},
+      {key:"Designer Type", label:"Designer Type"},
+      {key:"Complete Design", label:"Status"}
+    ]
+  },
+  hoto: {
+    label:"HOTO", tag:"HOTO", tagClass:"hoto",
+    columns:[
+      {key:"Lead ID", label:"Lead ID", type:"mono"},
+      {key:"Project Name", label:"Project", type:"primary", sub:"City"},
+      {key:"DISCOM Name", label:"DISCOM", type:"text"},
+      {key:"Total DC Capacity (kWp)", label:"DC (kWp)", type:"text"},
+      {key:"Total AC Capacity (kW)", label:"AC (kW)", type:"text"},
+      {key:"Project Closure Stage", label:"Closure Stage", type:"badge", badgeMap:{
+        "PO & Advance received":"green", "Design Pending":"amber"
+      }},
+      {key:"PO signed Date", label:"PO Signed", type:"date"},
+    ],
+    cityKey:"City",
+    filters:[
+      {key:"City", label:"City"},
+      {key:"DISCOM Name", label:"DISCOM"},
+      {key:"Project Closure Stage", label:"Closure Stage"}
+    ]
+  },
+  lead: {
+    label:"Lead Data", tag:"LEAD DATA", tagClass:"lead",
+    columns:[
+      {key:"Lead ID", label:"Lead ID", type:"mono"},
+      {key:"CHS Name", label:"CHS / Client", type:"primary", sub:"City"},
+      {key:"Type", label:"Type", type:"text"},
+      {key:"Source", label:"Source", type:"text"},
+      {key:"Final status_1", label:"Final Status", type:"badge", badgeMap:{
+        "Clean meet":"green", "INACTIVE":"red"
+      }},
+      {key:"Last call status", label:"Last Call", type:"text"},
+      {key:"Next Follow-Up Date", label:"Next Follow-up", type:"date"},
+    ],
+    cityKey:"City",
+    filters:[
+      {key:"City", label:"City"},
+      {key:"Source", label:"Source"},
+      {key:"Final status_1", label:"Final Status"}
+    ]
+  }
+};
+
+/* ============ HELPERS ============ */
+function safeParseJSON(str){
+  if(!str || typeof str !== "string") return null;
+  try{ return JSON.parse(str); }catch(e){ return null; }
+}
+
+function fmtDate(v){
+  if(!v) return "";
+  const d = new Date(v);
+  if(isNaN(d.getTime())) return String(v);
+  return d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function isUrl(v){
+  return typeof v === "string" && /^https?:\/\//i.test(v.trim());
+}
+
+function badgeClassFor(map, val){
+  if(!map) return "gray";
+  if(val in map) return map[val];
+  return val ? "blue" : "gray";
+}
+
+function esc(str){
+  const d = document.createElement('div');
+  d.innerText = (str===undefined||str===null) ? "" : String(str);
+  return d.innerHTML;
+}
+
+/* ============ RENDER: STAGE COUNTS ============ */
+function renderCounts(){
+  document.getElementById('countDesign').textContent = PARSED.design.length;
+  document.getElementById('countHoto').textContent = PARSED.hoto.length;
+  document.getElementById('countLead').textContent = PARSED.lead.length;
+}
+
+/* ============ RENDER: TABLE ============ */
+let LAST_FILTERED_DATA = [];
+
+function renderTable(){
+  const cfg = TAB_CFG[ACTIVE_TAB];
+  document.getElementById('panelTitle').textContent = cfg.label;
+  const tagEl = document.getElementById('panelTag');
+  tagEl.textContent = cfg.tag;
+  tagEl.className = "tag " + cfg.tagClass;
+
+  document.querySelectorAll('.stage').forEach(s=>s.classList.toggle('active', s.dataset.tab===ACTIVE_TAB));
+
+  const thead = document.getElementById('tableHead');
+  thead.innerHTML = "<tr>" + cfg.columns.map(c=>`<th>${esc(c.label)}</th>`).join('') + "<th></th></tr>";
+
+  let data = PARSED[ACTIVE_TAB];
+
+  Object.entries(ACTIVE_FILTERS).forEach(([key, val]) => {
+    data = data.filter(r => (r.json[key] ?? "").toString().trim() === val);
+  });
+
+  if(ACTIVE_SEARCH){
+    const q = ACTIVE_SEARCH.toLowerCase();
+    data = data.filter(r => {
+      const hay = [r.leadId, r.chsName, r.json[cfg.cityKey]].join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+  }
+
+  LAST_FILTERED_DATA = data;
+  renderActiveFilterChips();
+
+  document.getElementById('rowCount').textContent = `${data.length} record${data.length===1?'':'s'}`;
+  document.getElementById('downloadBtn').disabled = data.length === 0;
+
+  const tbody = document.getElementById('tableBody');
+  if(data.length === 0){
+    tbody.innerHTML = `<tr><td colspan="${cfg.columns.length+1}">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v16"/></svg>
+        <div class="e-title">No matching records</div>
+        <div class="e-sub">Try clearing the search or filters.</div>
+      </div>
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = data.map((r, idx) => {
+    const cells = cfg.columns.map(c => {
+      const val = r.json[c.key];
+      if(c.type === "primary"){
+        const sub = c.sub ? r.json[c.sub] : "";
+        return `<td><div class="primary-cell">${esc(val || '—')}</div>${sub?`<div class="cell-sub">${esc(sub)}</div>`:""}</td>`;
+      }
+      if(c.type === "mono"){
+        return `<td><span class="lead-id">${esc(val || '—')}</span></td>`;
+      }
+      if(c.type === "date"){
+        return `<td>${val ? esc(fmtDate(val)) : '<span style="color:#B5B9C4">—</span>'}</td>`;
+      }
+      if(c.type === "badge"){
+        if(!val) return `<td><span class="badge gray">—</span></td>`;
+        return `<td><span class="badge ${badgeClassFor(c.badgeMap, val)}">${esc(val)}</span></td>`;
+      }
+      return `<td>${val ? esc(val) : '<span style="color:#B5B9C4">—</span>'}</td>`;
+    }).join('');
+    return `<tr data-row-index="${r.__idx}">${cells}<td><span class="view-link">View <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></td></tr>`;
+  }).join('');
+
+  tbody.querySelectorAll('tr').forEach(tr => {
+    tr.addEventListener('click', () => openModal(ACTIVE_TAB, parseInt(tr.dataset.rowIndex, 10)));
+  });
+}
+
+/* ============ MODAL ============ */
+function openModal(tab, rowIdx){
+  const rec = PARSED[tab].find(r => r.__idx === rowIdx);
+  if(!rec) return;
+  const cfg = TAB_CFG[tab];
+
+  document.getElementById('modalTitle').textContent = rec.chsName || rec.leadId || "Record detail";
+  document.getElementById('modalLeadId').innerHTML = `<span class="lead-id">${esc(rec.leadId)}</span> &middot; <span class="tag ${cfg.tagClass}">${esc(cfg.tag)}</span>`;
+
+  const entries = Object.entries(rec.json);
+  const fieldsHtml = entries.map(([k, v]) => {
+    const isEmpty = v === "" || v === null || v === undefined;
+    let displayVal;
+    if(isEmpty){
+      displayVal = `<span class="field-val empty">Not provided</span>`;
+    } else if(isUrl(v)){
+      displayVal = `<span class="field-val"><a href="${esc(v)}" target="_blank" rel="noopener">Open link ↗</a></span>`;
+    } else if(typeof v === "string" && v.includes("\n")){
+      displayVal = `<span class="field-val multiline">${esc(v)}</span>`;
+    } else if(/date|timestamp/i.test(k) && typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v)){
+      displayVal = `<span class="field-val">${esc(fmtDate(v))}</span>`;
+    } else {
+      displayVal = `<span class="field-val">${esc(v)}</span>`;
+    }
+    return `<div class="field-row"><span class="field-key">${esc(k)}</span>${displayVal}</div>`;
+  }).join('');
+
+  document.getElementById('modalFields').innerHTML = fieldsHtml || `<div class="field-row full"><span class="field-val empty">No data available</span></div>`;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('modalOverlay').addEventListener('click', e => { if(e.target.id === 'modalOverlay') closeModal(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
+
+/* ============ TAB / SEARCH / FILTER WIRING ============ */
+document.querySelectorAll('.stage').forEach(stage => {
+  stage.addEventListener('click', () => {
+    ACTIVE_TAB = stage.dataset.tab;
+    ACTIVE_FILTERS = {};
+    ACTIVE_SEARCH = "";
+    document.getElementById('searchInput').value = "";
+    renderFilterBar();
+    renderTable();
+  });
+});
+
+document.getElementById('searchInput').addEventListener('input', e => {
+  ACTIVE_SEARCH = e.target.value.trim();
+  renderTable();
+});
+
+document.getElementById('downloadBtn').addEventListener('click', downloadCSV);
+
+function downloadCSV(){
+  if(LAST_FILTERED_DATA.length === 0) return;
+  const keySet = new Set();
+  LAST_FILTERED_DATA.forEach(r => Object.keys(r.json).forEach(k => keySet.add(k)));
+  const fields = [...keySet];
+  const rows = LAST_FILTERED_DATA.map(r => {
+    const row = {};
+    fields.forEach(f => { row[f] = r.json[f] ?? ""; });
+    return row;
+  });
+  const csv = Papa.unparse({ fields, data: rows });
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `${ACTIVE_TAB}-filtered-${stamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ============ DATA LOAD ============ */
+function buildParsed(){
+  PARSED = { design:[], hoto:[], lead:[] };
+  RAW_ROWS.forEach((row, idx) => {
+    const leadId = (row[COL.leadId] || "").trim();
+    const chsName = (row[COL.chsName] || "").trim();
+    const map = { design: COL.design, hoto: COL.hoto, lead: COL.lead };
+    Object.entries(map).forEach(([tabKey, colName]) => {
+      const parsed = safeParseJSON(row[colName]);
+      if(parsed && typeof parsed === "object"){
+        PARSED[tabKey].push({ __idx: idx, leadId: leadId || parsed["Lead ID"] || "", chsName: chsName || parsed["Project name"] || parsed["Project Name"] || parsed["CHS Name"] || "", json: parsed });
+      }
+    });
+  });
+}
+
+function setStatus(text, ok){
+  document.getElementById('statusText').textContent = text;
+  const dot = document.getElementById('statusDot');
+  dot.style.background = ok ? "#12B76A" : "#F04438";
+  dot.classList.toggle('pulse', !ok ? false : true);
+}
+
+function loadData(){
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  setStatus("Syncing…", true);
+
+  Papa.parse(CSV_URL, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: (results) => {
+      RAW_ROWS = results.data;
+      buildParsed();
+      renderCounts();
+      renderFilterBar();
+      renderTable();
+      setStatus(`Live · ${RAW_ROWS.length} rows`, true);
+      btn.classList.remove('spinning');
+    },
+    error: (err) => {
+      console.error(err);
+      setStatus("Connection failed", false);
+      btn.classList.remove('spinning');
+      document.getElementById('tableBody').innerHTML = `<tr><td colspan="8">
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+          <div class="e-title">Could not load the Master Sheet</div>
+          <div class="e-sub">Make sure the sheet is published / shared as "Anyone with the link can view", then hit Refresh.</div>
+        </div>
+      </td></tr>`;
+    }
+  });
+}
+
+document.getElementById('refreshBtn').addEventListener('click', loadData);
+
+loadData();
+</script>
+</body>
+</html>
