@@ -205,6 +205,93 @@
   }
   .clear-all-chip:hover{text-decoration:underline;}
 
+  /* ---------- Chat widget ---------- */
+  .chat-fab{
+    position:fixed;bottom:24px;right:24px;z-index:90;
+    width:56px;height:56px;border-radius:50%;
+    background:var(--ink);color:#fff;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 10px 30px -6px rgba(16,20,37,0.4);
+    transition:transform .15s;
+  }
+  .chat-fab:hover{transform:scale(1.06);}
+  .chat-fab svg{width:24px;height:24px;}
+  .chat-fab .fab-dot{
+    position:absolute;top:-2px;right:-2px;width:12px;height:12px;
+    border-radius:50%;background:#F04438;border:2px solid var(--surface);display:none;
+  }
+
+  .chat-panel{
+    position:fixed;bottom:92px;right:24px;z-index:95;
+    width:340px;max-height:70vh;overflow-y:auto;
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:16px;box-shadow:0 20px 60px -10px rgba(16,20,37,0.35);
+    display:none;flex-direction:column;
+    animation:modalIn .16s ease;
+  }
+  .chat-panel.open{display:flex;}
+  .chat-head{
+    padding:16px 18px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .chat-head h4{margin:0;font-size:14.5px;font-family:'Sora';}
+  .chat-head .sub{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .chat-close{
+    border:none;background:var(--surface-2);width:26px;height:26px;border-radius:7px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);
+  }
+  .chat-close:hover{background:var(--line-soft);}
+  .chat-body{padding:16px 18px;display:flex;flex-direction:column;gap:12px;}
+  .chat-field label{
+    display:block;font-size:11px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.03em;color:var(--ink-soft);margin-bottom:6px;
+  }
+  .chat-field select, .chat-field textarea, .chat-field input{
+    width:100%;font-family:'Inter';font-size:13.5px;color:var(--ink);
+    border:1px solid var(--line);border-radius:8px;padding:9px 11px;
+    background:var(--surface-2);outline:none;
+  }
+  .chat-field select:focus, .chat-field textarea:focus, .chat-field input:focus{border-color:var(--design);}
+  .chat-field textarea{resize:vertical;min-height:64px;font-family:'Inter';}
+  .chat-email-row{
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--surface-2);border:1px solid var(--line);
+    border-radius:8px;padding:8px 11px;font-size:12.5px;color:var(--ink-soft);
+  }
+  .chat-email-row .email-val{color:var(--ink);font-weight:600;font-family:'JetBrains Mono';font-size:12px;}
+  .chat-email-row button{border:none;background:none;color:var(--design);font-weight:600;font-size:12px;cursor:pointer;}
+  .chat-submit{
+    background:var(--ink);color:#fff;border:none;border-radius:9px;
+    padding:11px;font-family:'Inter';font-weight:700;font-size:13.5px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .chat-submit:hover{background:#252A3D;}
+  .chat-submit:disabled{opacity:.55;cursor:not-allowed;}
+  .chat-submit svg{width:15px;height:15px;}
+  .chat-toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;font-size:13px;font-weight:600;
+    padding:11px 20px;border-radius:999px;z-index:200;
+    box-shadow:0 10px 30px -6px rgba(16,20,37,0.4);
+    opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;
+    display:flex;align-items:center;gap:8px;
+  }
+  .chat-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .chat-toast svg{width:15px;height:15px;flex-shrink:0;}
+  .chat-recent{border-top:1px solid var(--line);padding:14px 18px 16px;}
+  .chat-recent h5{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-soft);margin:0 0 8px;font-weight:700;}
+  .chat-recent-item{
+    font-size:12px;color:var(--ink-soft);padding:8px 0;border-bottom:1px solid var(--line-soft);
+  }
+  .chat-recent-item:last-child{border-bottom:none;}
+  .chat-recent-item .rtag{font-weight:700;color:var(--ink);}
+  .chat-recent-empty{font-size:12px;color:var(--ink-soft);padding:6px 0;}
+
+  @media (max-width:480px){
+    .chat-panel{width:calc(100vw - 32px);right:16px;bottom:84px;}
+    .chat-fab{right:16px;bottom:16px;}
+  }
+
   /* ---------- Table ---------- */
   .table-card{
     background:var(--surface);border:1px solid var(--line);
@@ -729,6 +816,128 @@ function downloadCSV(){
   URL.revokeObjectURL(url);
 }
 
+/* ============ CHAT WIDGET: report-an-issue -> Chats sheet ============ */
+/*
+  SETUP (one-time, done by you in Google Apps Script — see instructions provided separately):
+  1. Deploy an Apps Script Web App bound to this spreadsheet with a doPost(e) that appends
+     [Issue, Team, Remarks, Timestamp, User email] to the "Chats" sheet.
+  2. Paste the deployment URL below.
+*/
+const CHATBOT_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxACK9Vm-1kayB-LU1tYk7i_tudKZyRr0W4jBPAh0V8zEd22t424g2G0miaFfeWhwOA-A/exec";
+const EMAIL_STORAGE_KEY = "oms_chat_user_email";
+
+let SESSION_SUBMISSIONS = [];
+
+function getStoredEmail(){
+  try{ return localStorage.getItem(EMAIL_STORAGE_KEY) || ""; }catch(e){ return ""; }
+}
+function setStoredEmail(v){
+  try{ localStorage.setItem(EMAIL_STORAGE_KEY, v); }catch(e){}
+}
+
+function refreshEmailDisplay(){
+  const email = getStoredEmail();
+  document.getElementById('chatEmailDisplay').textContent = email || "not set";
+}
+
+function promptForEmail(){
+  const current = getStoredEmail();
+  const val = window.prompt("Enter your work email (used for all future submissions on this device):", current || "");
+  if(val && val.trim()){
+    setStoredEmail(val.trim());
+    refreshEmailDisplay();
+  }
+}
+
+function showChatToast(text, isError){
+  const toast = document.getElementById('chatToast');
+  const toastText = document.getElementById('chatToastText');
+  toastText.textContent = text;
+  toast.style.background = isError ? "#C0362C" : "";
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2800);
+}
+
+function openChatPanel(){
+  document.getElementById('chatPanel').classList.add('open');
+  document.getElementById('fabDot').style.display = 'none';
+  if(!getStoredEmail()) promptForEmail();
+  refreshEmailDisplay();
+}
+function closeChatPanel(){
+  document.getElementById('chatPanel').classList.remove('open');
+}
+
+document.getElementById('chatFab').addEventListener('click', () => {
+  const panel = document.getElementById('chatPanel');
+  panel.classList.contains('open') ? closeChatPanel() : openChatPanel();
+});
+document.getElementById('chatClose').addEventListener('click', closeChatPanel);
+document.getElementById('chatEmailChange').addEventListener('click', promptForEmail);
+
+function renderRecentSubmissions(){
+  const list = document.getElementById('chatRecentList');
+  if(SESSION_SUBMISSIONS.length === 0){
+    list.innerHTML = `<div class="chat-recent-empty">Nothing submitted yet in this session.</div>`;
+    return;
+  }
+  list.innerHTML = SESSION_SUBMISSIONS.slice().reverse().map(s => `
+    <div class="chat-recent-item">
+      <span class="rtag">${esc(s.issue)}</span> · ${esc(s.team)}<br>${esc(s.remarks || "No remarks")}
+    </div>`).join('');
+}
+
+async function submitChat(){
+  const issue = document.getElementById('chatIssue').value;
+  const team = document.getElementById('chatTeam').value;
+  const remarks = document.getElementById('chatRemarks').value.trim();
+
+  if(!issue || !team){
+    showChatToast("Please select an issue and a team", true);
+    return;
+  }
+  if(!getStoredEmail()){
+    promptForEmail();
+    if(!getStoredEmail()){
+      showChatToast("Email is required to submit", true);
+      return;
+    }
+  }
+  if(CHATBOT_WEBAPP_URL.includes("PASTE_YOUR")){
+    showChatToast("Chat webhook not configured yet", true);
+    return;
+  }
+
+  const btn = document.getElementById('chatSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = "Sending…";
+
+  try{
+    await fetch(CHATBOT_WEBAPP_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ issue, team, remarks, email: getStoredEmail() })
+    });
+
+    SESSION_SUBMISSIONS.push({ issue, team, remarks });
+    renderRecentSubmissions();
+    document.getElementById('chatRemarks').value = "";
+    document.getElementById('chatIssue').value = "";
+    document.getElementById('chatTeam').value = "";
+    showChatToast("Submitted — added to the Chats sheet");
+  }catch(err){
+    console.error(err);
+    showChatToast("Could not submit — check your connection", true);
+  }finally{
+    btn.disabled = false;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg> Submit`;
+  }
+}
+document.getElementById('chatSubmitBtn').addEventListener('click', submitChat);
+
+refreshEmailDisplay();
+
 /* ============ DATA LOAD ============ */
 function buildParsed(){
   PARSED = { design:[], hoto:[], lead:[] };
@@ -789,5 +998,70 @@ document.getElementById('refreshBtn').addEventListener('click', loadData);
 
 loadData();
 </script>
+<!-- Report-an-issue chat widget -->
+<button class="chat-fab" id="chatFab" title="Report an issue">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+  <span class="fab-dot" id="fabDot"></span>
+</button>
+
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-head">
+    <div>
+      <h4>Report an issue</h4>
+      <div class="sub">Goes straight into the Chats sheet</div>
+    </div>
+    <button class="chat-close" id="chatClose">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="chat-body">
+    <div class="chat-field">
+      <label>Issue</label>
+      <select id="chatIssue">
+        <option value="">Select an issue…</option>
+        <option value="Data not loading">Data not loading</option>
+        <option value="Wrong value in table">Wrong value in table</option>
+        <option value="Missing record">Missing record</option>
+        <option value="Login / access issue">Login / access issue</option>
+        <option value="Slow performance">Slow performance</option>
+        <option value="Feature request">Feature request</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="chat-field">
+      <label>Team</label>
+      <select id="chatTeam">
+        <option value="">Select a team…</option>
+        <option value="Ops Team">Ops Team</option>
+        <option value="Design Team">Design Team</option>
+        <option value="Sales Team">Sales Team</option>
+        <option value="IT / Dev Team">IT / Dev Team</option>
+        <option value="Admin">Admin</option>
+      </select>
+    </div>
+    <div class="chat-field">
+      <label>Remarks</label>
+      <textarea id="chatRemarks" placeholder="Describe what's happening…"></textarea>
+    </div>
+    <div class="chat-email-row">
+      <span>Sending as <span class="email-val" id="chatEmailDisplay">—</span></span>
+      <button id="chatEmailChange">change</button>
+    </div>
+    <button class="chat-submit" id="chatSubmitBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+      Submit
+    </button>
+  </div>
+  <div class="chat-recent">
+    <h5>Your recent submissions</h5>
+    <div id="chatRecentList"><div class="chat-recent-empty">Nothing submitted yet in this session.</div></div>
+  </div>
+</div>
+
+<div class="chat-toast" id="chatToast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="chatToastText">Submitted</span>
+</div>
+
 </body>
 </html>
